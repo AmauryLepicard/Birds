@@ -13,49 +13,52 @@ class Flock:
     def addBird(self, bird):
         self.birdList.append(bird)
 
-    def updateSpeeds(self, deltaTime):
+    def updateAccelerations(self, deltaTime):
         for b in self.birdList:
-            self.computeSpeed(b, deltaTime)
+            self.computeAcceleration(b, deltaTime)
 
     def updatePos(self, deltaTime):
         for b in self.birdList:
+            b.speed = (b.speed + b.acceleration * deltaTime)
+            if abs(b.speed) > b.maxSpeed:
+                b.speed = b.speed.normalized() * b.maxSpeed
             b.position = (b.position + b.speed * deltaTime) % Point(self.w, self.h)
 
-    def computeSpeed(self, bird, deltaTime):
-        avoidSpeed = []
-        meanSpeed = []
-        meanPosSpeed = []
-        fleeSpeed = []
-        chaseSpeed = []
-        newSpeed = False
+    def computeAcceleration(self, bird, deltaTime):
+        avoidAcc = []
+        meanAcc = []
+        meanPosAcc = []
+        fleeAcc = []
+        chaseAcc = []
+        newAcc = False
         for other in self.birdList:
             if bird != other:
                 if bird.dist(other) < bird.collisionrange:
-                    newSpeed = True
-                    avoidSpeed.append((bird.position - other.position) * (2 * bird.collisionrange - bird.dist(other)))
+                    newAcc = True
+                    avoidAcc.append((bird.position - other.position) * (2 * bird.collisionrange - bird.dist(other)))
                 else:
                     seen, dist = bird.sees(other, bird.visionangle)
                     if seen and dist < bird.detectionrange:
-                        newSpeed = True
+                        newAcc = True
                         if bird.race == other.race:
-                            meanSpeed.append(other.speed)
+                            meanAcc.append(other.speed)
                             relativePos = other.position - bird.position
-                            meanPosSpeed.append(relativePos)
+                            meanPosAcc.append(relativePos)
                         if bird.race < other.race:
-                            fleeSpeed.append(
+                            fleeAcc.append(
                                 (bird.position - other.position) * (2 * bird.collisionrange - bird.dist(other)))
                         if bird.race > other.race:
                             relativePos = other.position - bird.position
-                            chaseSpeed.append(relativePos)
+                            chaseAcc.append(relativePos)
 
-        if (newSpeed):
-            # print "new heading", len(avoidSpeed), len(meanSpeed), len(meanPosSpeed)
-            newSpeedVector = mean(avoidSpeed) * param.AVOID_WEIGHT
-            newSpeedVector += mean(meanSpeed) * param.MEAN_SPEED_WEIGHT
-            newSpeedVector += mean(meanPosSpeed) * param.MEAN_POS_WEIGHT
-            newSpeedVector += mean(fleeSpeed) * param.FLEE_WEIGHT
-            newSpeedVector += mean(chaseSpeed) * param.CHASE_WEIGHT
-            newAngle = math.degrees(math.atan2(newSpeedVector.y, newSpeedVector.x))
+        if (newAcc):
+            # print "new heading", len(avoidAcc), len(meanAcc), len(meanPosSpeed)
+            newAccVector = mean(avoidAcc) * param.AVOID_WEIGHT
+            newAccVector += mean(meanAcc) * param.MEAN_SPEED_WEIGHT
+            newAccVector += mean(meanPosAcc) * param.MEAN_POS_WEIGHT
+            newAccVector += mean(fleeAcc) * param.FLEE_WEIGHT
+            newAccVector += mean(chaseAcc) * param.CHASE_WEIGHT
+            newAngle = math.degrees(math.atan2(newAccVector.y, newAccVector.x))
             angleDelta = newAngle - bird.getAngle()
             if math.fabs(angleDelta) > bird.maxTurnSpeed:
                 correctedAngle = bird.getAngle()
@@ -63,14 +66,14 @@ class Flock:
                     correctedAngle += bird.maxTurnSpeed * deltaTime
                 if bird.getAngle() > newAngle:
                     correctedAngle -= bird.maxTurnSpeed * deltaTime
-                newSpeedVector = Point(math.cos(math.radians(correctedAngle)),
-                                       math.sin(math.radians(correctedAngle))) * abs(newSpeedVector)
+                newAccVector = Point(math.cos(math.radians(correctedAngle)),
+                                       math.sin(math.radians(correctedAngle))) * abs(newAccVector)
 
-            if abs(newSpeedVector) > bird.maxSpeed:
-                newSpeedVector = newSpeedVector.normalized() * bird.maxSpeed
+            if abs(newAccVector) > bird.maxSpeed:
+                newAccVector = newAccVector.normalized() * bird.maxSpeed
 
-            bird.speed = newSpeedVector
-            if len(fleeSpeed) != 0:
+            bird.acceleration = newAccVector
+            if len(fleeAcc) != 0:
                 bird.state = Bird.FLEEING
             else:
                 bird.state = Bird.FOLLOWING

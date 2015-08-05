@@ -32,7 +32,7 @@ while 1:
             sys.exit()
         if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
             showRadius = not showRadius
-    myFlock.updateSpeeds(deltaTime)
+    myFlock.updateAccelerations(deltaTime)
     myFlock.updatePos(deltaTime)
     for b in myFlock.birdList:
         tmpImage = pygame.transform.rotate(birdFollowingImage, -b.getAngle())

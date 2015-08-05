@@ -15,6 +15,7 @@ class Bird(object):
         self.maxSpeed = param.BIRD_MAX_SPEED
         self.maxTurnSpeed = param.BIRD_MAX_TURN_ANGLE
         self.speed = Point.Point(math.cos(math.radians(angle)), math.sin(math.radians(angle))) * self.maxSpeed
+        self.acceleration = Point.Point(0.0, 0.0)
         self.state = FREE
         self.race = race
         self.collisionrange = collisionRange
