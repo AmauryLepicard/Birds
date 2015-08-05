@@ -32,7 +32,7 @@ while 1:
             sys.exit()
         if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
             showRadius = not showRadius
-    myFlock.updateSpeeds()
+    myFlock.updateSpeeds(deltaTime)
     myFlock.updatePos(deltaTime)
     for b in myFlock.birdList:
         tmpImage = pygame.transform.rotate(birdFollowingImage, -b.getAngle())
@@ -49,7 +49,8 @@ while 1:
             tmpImage = pygame.transform.rotate(predatorImage, -b.getAngle())
         screen.blit(tmpImage, pygame.Rect(b.position.x - tmpImage.get_width() / 2, b.position.y - tmpImage.get_height() / 2, 0, 0))
         if showRadius:
-            pygame.draw.circle(screen, (0, 255, 0), b.position.getTuple(), param.COLLISION_RANGE, 1)
-            pygame.draw.circle(screen, (0, 0, 255), b.position.getTuple(), param.DETECTION_RANGE , 1)
+            pygame.draw.circle(screen, (0, 255, 0), b.position.getTuple(), b.collisionrange, 1)
+            pygame.draw.circle(screen, (0, 0, 255), b.position.getTuple(), b.detectionrange, 1)
+            # pygame.draw.line(screen, (255, 255, 255), b.position.getTuple(), (b.position + b.speed * 50.0).getTuple())
 
     pygame.display.flip()

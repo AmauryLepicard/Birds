@@ -22,8 +22,6 @@ class Bird(object):
         self.visionangle = visionAngle
 
     def getAngle(self):
-#        print "heading", self.heading
-#        print "angle", math.degrees(math.atan2(self.heading.y, self.heading.x))
         return math.degrees(math.atan2(self.speed.y, self.speed.x))
 
     def sees(self, other, angle):

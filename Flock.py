@@ -13,15 +13,15 @@ class Flock:
     def addBird(self, bird):
         self.birdList.append(bird)
 
-    def updateSpeeds(self):
+    def updateSpeeds(self, deltaTime):
         for b in self.birdList:
-            self.computeSpeed(b)
+            self.computeSpeed(b, deltaTime)
 
     def updatePos(self, deltaTime):
         for b in self.birdList:
             b.position = (b.position + b.speed * deltaTime) % Point(self.w, self.h)
 
-    def computeSpeed(self, bird):
+    def computeSpeed(self, bird, deltaTime):
         avoidSpeed = []
         meanSpeed = []
         meanPosSpeed = []
@@ -59,9 +59,9 @@ class Flock:
             if math.fabs(angleDelta) > bird.maxTurnSpeed:
                 correctedAngle = bird.getAngle()
                 if bird.getAngle() < newAngle:
-                    correctedAngle += bird.maxTurnSpeed
+                    correctedAngle += bird.maxTurnSpeed * deltaTime
                 if bird.getAngle() > newAngle:
-                    correctedAngle -= bird.maxTurnSpeed
+                    correctedAngle -= bird.maxTurnSpeed * deltaTime
                 newSpeedVector = Point(math.cos(math.radians(correctedAngle)), math.sin(math.radians(correctedAngle))) * abs(newSpeedVector)
 
             if abs(newSpeedVector) > bird.maxSpeed:
@@ -74,7 +74,7 @@ class Flock:
                 bird.state = Bird.FOLLOWING
         else:
             heading = math.degrees(math.atan2(bird.speed.y, bird.speed.x))
-            heading += random.uniform(-15.0,15.0)
+            heading += random.uniform(-5.0,5.0)
             bird.speed = Point(math.cos(math.radians(heading)),math.sin(math.radians(heading))) * abs(bird.speed)
             bird.state = Bird.FREE
 
