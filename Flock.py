@@ -29,8 +29,8 @@ class Flock:
         chaseSpeed = []
         newSpeed = False
         for other in self.birdList:
-            if (bird != other):
-                if (bird.dist(other)) < bird.collisionrange:
+            if bird != other:
+                if bird.dist(other) < bird.collisionrange:
                     newSpeed = True
                     avoidSpeed.append((bird.position - other.position) * (2 * bird.collisionrange - bird.dist(other)))
                 else:
@@ -42,18 +42,19 @@ class Flock:
                             relativePos = other.position - bird.position
                             meanPosSpeed.append(relativePos)
                         if bird.race < other.race:
-                            fleeSpeed.append((bird.position - other.position) * (2 * bird.collisionrange - bird.dist(other)))
+                            fleeSpeed.append(
+                                (bird.position - other.position) * (2 * bird.collisionrange - bird.dist(other)))
                         if bird.race > other.race:
                             relativePos = other.position - bird.position
                             chaseSpeed.append(relativePos)
 
         if (newSpeed):
-            #print "new heading", len(avoidSpeed), len(meanSpeed), len(meanPosSpeed)
-            newSpeedVector = self.mean(avoidSpeed) * param.AVOID_WEIGHT
-            newSpeedVector += self.mean(meanSpeed) * param.MEAN_SPEED_WEIGHT
-            newSpeedVector += self.mean(meanPosSpeed) * param.MEAN_POS_WEIGHT
-            newSpeedVector += self.mean(fleeSpeed) * param.FLEE_WEIGHT
-            newSpeedVector += self.mean(chaseSpeed) * param.CHASE_WEIGHT
+            # print "new heading", len(avoidSpeed), len(meanSpeed), len(meanPosSpeed)
+            newSpeedVector = mean(avoidSpeed) * param.AVOID_WEIGHT
+            newSpeedVector += mean(meanSpeed) * param.MEAN_SPEED_WEIGHT
+            newSpeedVector += mean(meanPosSpeed) * param.MEAN_POS_WEIGHT
+            newSpeedVector += mean(fleeSpeed) * param.FLEE_WEIGHT
+            newSpeedVector += mean(chaseSpeed) * param.CHASE_WEIGHT
             newAngle = math.degrees(math.atan2(newSpeedVector.y, newSpeedVector.x))
             angleDelta = newAngle - bird.getAngle()
             if math.fabs(angleDelta) > bird.maxTurnSpeed:
@@ -62,7 +63,8 @@ class Flock:
                     correctedAngle += bird.maxTurnSpeed * deltaTime
                 if bird.getAngle() > newAngle:
                     correctedAngle -= bird.maxTurnSpeed * deltaTime
-                newSpeedVector = Point(math.cos(math.radians(correctedAngle)), math.sin(math.radians(correctedAngle))) * abs(newSpeedVector)
+                newSpeedVector = Point(math.cos(math.radians(correctedAngle)),
+                                       math.sin(math.radians(correctedAngle))) * abs(newSpeedVector)
 
             if abs(newSpeedVector) > bird.maxSpeed:
                 newSpeedVector = newSpeedVector.normalized() * bird.maxSpeed
@@ -74,16 +76,16 @@ class Flock:
                 bird.state = Bird.FOLLOWING
         else:
             heading = math.degrees(math.atan2(bird.speed.y, bird.speed.x))
-            heading += random.uniform(-5.0,5.0)
-            bird.speed = Point(math.cos(math.radians(heading)),math.sin(math.radians(heading))) * abs(bird.speed)
+            heading += random.uniform(-5.0, 5.0)
+            bird.speed = Point(math.cos(math.radians(heading)), math.sin(math.radians(heading))) * abs(bird.speed)
             bird.state = Bird.FREE
 
-    def mean(self, pointList):
-        if len(pointList) != 0:
-            m = Point(0, 0)
-            for p in pointList:
-                m = m + p
-            m.div(len(pointList))
-            return m
-        return Point(0, 0)
 
+def mean(pointList):
+    if len(pointList) != 0:
+        m = Point(0, 0)
+        for p in pointList:
+            m = m + p
+        m.div(len(pointList))
+        return m
+    return Point(0, 0)
