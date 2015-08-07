@@ -33,44 +33,40 @@ class Flock:
         newAcc = False
         for other in self.birdList:
             if bird != other:
-                if bird.dist(other) < bird.collisionrange:
+                if bird.dist(other) < bird.collisionRange:
                     newAcc = True
-                    avoidAcc.append((bird.position - other.position) * (2 * bird.collisionrange - bird.dist(other)))
+                    avoidAcc.append((bird.position - other.position) * math.pow(bird.collisionRange - bird.dist(other), 2))
                 else:
-                    seen, dist = bird.sees(other, bird.visionangle)
-                    if seen and dist < bird.detectionrange:
+                    seen, dist = bird.sees(other, bird.visionAngle)
+                    if seen and dist < bird.detectionRange:
                         newAcc = True
                         if bird.race == other.race:
                             meanAcc.append(other.speed)
                             relativePos = other.position - bird.position
                             meanPosAcc.append(relativePos)
                         if bird.race < other.race:
-                            fleeAcc.append(
-                                (bird.position - other.position) * (2 * bird.collisionrange - bird.dist(other)))
+                            fleeAcc.append((bird.position - other.position) * math.pow(bird.detectionRange - bird.dist(other), 2))
                         if bird.race > other.race:
                             relativePos = other.position - bird.position
                             chaseAcc.append(relativePos)
 
-        if (newAcc):
+        if newAcc:
             # print "new heading", len(avoidAcc), len(meanAcc), len(meanPosSpeed)
             newAccVector = mean(avoidAcc) * param.AVOID_WEIGHT
             newAccVector += mean(meanAcc) * param.MEAN_SPEED_WEIGHT
             newAccVector += mean(meanPosAcc) * param.MEAN_POS_WEIGHT
             newAccVector += mean(fleeAcc) * param.FLEE_WEIGHT
             newAccVector += mean(chaseAcc) * param.CHASE_WEIGHT
-            newAngle = math.degrees(math.atan2(newAccVector.y, newAccVector.x))
-            angleDelta = newAngle - bird.getAngle()
-            if math.fabs(angleDelta) > bird.maxTurnSpeed:
-                correctedAngle = bird.getAngle()
-                if bird.getAngle() < newAngle:
-                    correctedAngle += bird.maxTurnSpeed * deltaTime
-                if bird.getAngle() > newAngle:
-                    correctedAngle -= bird.maxTurnSpeed * deltaTime
-                newAccVector = Point(math.cos(math.radians(correctedAngle)),
-                                       math.sin(math.radians(correctedAngle))) * abs(newAccVector)
-
-            if abs(newAccVector) > bird.maxSpeed:
-                newAccVector = newAccVector.normalized() * bird.maxSpeed
+            #newAccVector += Point(100.0, 0.0)
+            # newAngle = math.degrees(math.atan2(newAccVector.y, newAccVector.x))
+            # angleDelta = newAngle - bird.getAngle()
+            # if math.fabs(angleDelta) > bird.maxTurnSpeed:
+            #     correctedAngle = bird.getAngle()
+            #     if bird.getAngle() < newAngle:
+            #         correctedAngle += bird.maxTurnSpeed * deltaTime
+            #     if bird.getAngle() > newAngle:
+            #         correctedAngle -= bird.maxTurnSpeed * deltaTime
+            #     newAccVector = Point(math.cos(math.radians(correctedAngle)), math.sin(math.radians(correctedAngle))) * abs(newAccVector)
 
             bird.acceleration = newAccVector
             if len(fleeAcc) != 0:

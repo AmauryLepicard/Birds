@@ -43,4 +43,4 @@ class Point(object):
         return Point(self.x / l, self.y / l)
 
     def getTuple(self):
-        return (int(self.x), int(self.y))
+        return int(self.x), int(self.y)
