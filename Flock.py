@@ -1,17 +1,38 @@
 import Bird
 import param
-from Point import Point
-import math, random
+import math
+import random
+import numpy as np
+import pygame
 
 
-class Flock:
+class Flock(pygame.sprite.Group):
+
     def __init__(self, w, h):
+        # Call the parent class (Group) constructor
+        pygame.sprite.Group.__init__(self)
+
         self.birdList = []
         self.w = w
         self.h = h
 
     def addBird(self, bird):
         self.birdList.append(bird)
+        self.add(bird)
+
+    def update(self, deltaTime):
+        self.updateAccelerations(deltaTime)
+        self.updatePos(deltaTime)
+        self.killPreys()
+
+    def killPreys(self):
+        for bird in self.birdList:
+            for other in self.birdList:
+                if bird.race in param.PREDATORS[other.race]:
+                    dist = np.linalg.norm(np.array([bird.position[0]-other.position[0], bird.position[1]-other.position[1]]))
+                    if dist < 10:
+                        self.birdList.remove(other)
+                        self.remove(other)
 
     def updateAccelerations(self, deltaTime):
         for b in self.birdList:
@@ -20,9 +41,16 @@ class Flock:
     def updatePos(self, deltaTime):
         for b in self.birdList:
             b.speed = (b.speed + b.acceleration * deltaTime)
-            if abs(b.speed) > b.maxSpeed:
-                b.speed = b.speed.normalized() * b.maxSpeed
-            b.position = (b.position + b.speed * deltaTime) % Point(self.w, self.h)
+            if np.linalg.norm(b.speed) > b.maxSpeed:
+                b.speed = b.speed / np.linalg.norm(b.speed) * b.maxSpeed
+            b.position = (b.position + b.speed * deltaTime) % np.array([self.w, self.h])
+
+            heading = math.atan2(b.speed[1], b.speed[0])
+
+            b.image = pygame.transform.rotozoom(b.baseImage, -heading * 180 / math.pi, 1.0)
+
+            b.image.set_colorkey((0, 0, 0))
+            b.rect = b.image.get_rect(center=(b.position[0], b.position[1]))
 
     def computeAcceleration(self, bird, deltaTime):
         avoidAcc = []
@@ -33,21 +61,21 @@ class Flock:
         newAcc = False
         for other in self.birdList:
             if bird != other:
-                if bird.dist(other) < bird.collisionRange:
+                relativePos = other.position - bird.position
+                dist = bird.dist(other)
+                if dist < bird.collisionRange and bird.race not in param.PREDATORS[other.race]:
                     newAcc = True
-                    avoidAcc.append((bird.position - other.position) * math.pow(bird.collisionRange - bird.dist(other), 2))
+                    avoidAcc.append(-relativePos * math.pow(bird.collisionRange - dist, 2))
                 else:
-                    seen, dist = bird.sees(other, bird.visionAngle)
+                    seen = bird.sees(other, bird.visionAngle)
                     if seen and dist < bird.detectionRange:
                         newAcc = True
                         if bird.race == other.race:
                             meanAcc.append(other.speed)
-                            relativePos = other.position - bird.position
                             meanPosAcc.append(relativePos)
-                        if bird.race < other.race:
-                            fleeAcc.append((bird.position - other.position) * math.pow(bird.detectionRange - bird.dist(other), 2))
-                        if bird.race > other.race:
-                            relativePos = other.position - bird.position
+                        if other.race in param.PREDATORS[bird.race]:
+                            fleeAcc.append(-relativePos * math.pow(bird.detectionRange - dist, 2))
+                        if bird.race in param.PREDATORS[other.race]:
                             chaseAcc.append(relativePos)
 
         if newAcc:
@@ -69,22 +97,25 @@ class Flock:
             #     newAccVector = Point(math.cos(math.radians(correctedAngle)), math.sin(math.radians(correctedAngle))) * abs(newAccVector)
 
             bird.acceleration = newAccVector
+            heading = math.atan2(bird.speed[1], bird.speed[0])
             if len(fleeAcc) != 0:
                 bird.state = Bird.FLEEING
             else:
                 bird.state = Bird.FOLLOWING
+
         else:
-            heading = math.degrees(math.atan2(bird.speed.y, bird.speed.x))
-            heading += random.uniform(-5.0, 5.0)
-            bird.speed = Point(math.cos(math.radians(heading)), math.sin(math.radians(heading))) * abs(bird.speed)
+            heading = math.atan2(bird.speed[1], bird.speed[0])
+            heading *= random.uniform(0.9, 1.1)
+            bird.speed = np.array([math.cos(heading), math.sin(heading)]) * abs(bird.speed)
             bird.state = Bird.FREE
+
 
 
 def mean(pointList):
     if len(pointList) != 0:
-        m = Point(0, 0)
+        m = np.zeros(2)
         for p in pointList:
             m = m + p
-        m.div(len(pointList))
+        m /= len(pointList)
         return m
-    return Point(0, 0)
+    return np.zeros(2)
